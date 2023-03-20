@@ -125,3 +125,10 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Twilio Configs
+ACCOUNTS_SID = 'AC031bd3d4e1958d1a580cbf9ddce40b90'
+
+AUTH_TOKEN = '8766fe4f0d4cd538a329e60ed2c1a8fe'
+
+PHONE = '+15074316351'

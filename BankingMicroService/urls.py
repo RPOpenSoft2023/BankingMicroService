@@ -15,7 +15,10 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
+from BankingAPI.views import *
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('create_account/', create_account ),
+    path('delete_account/', delete_account ),
 ]
