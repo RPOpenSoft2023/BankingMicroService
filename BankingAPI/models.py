@@ -7,12 +7,13 @@ from django.utils import timezone
 class Account(models.Model):
 
     ifsc = models.CharField(max_length=255, null=True, blank=True)
-    account_number = models.BigIntegerField(primary_key=True)
+    account_number = models.CharField(max_length=255, primary_key=True)
     account_opening_date = models.DateField(null=True, blank=True)
     account_type = models.CharField(max_length=255, null=True, blank=True)
     bank_name = models.CharField(max_length=255, null=True, blank=True)
+    branch_name = models.CharField(max_length=255, null=True, blank=True)
     branch_address = models.TextField(max_length=255, null=True, blank=True)
-    phone_number = models.BigIntegerField(null=True, blank=True)
+    phone_number = models.CharField(max_length=255, null=True, blank=True)
 
     def __str__(self):
         return str(self.account_number)
