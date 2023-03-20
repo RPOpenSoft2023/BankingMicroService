@@ -22,7 +22,7 @@ class Account(models.Model):
         verbose_name_plural = 'Accounts'
 
 
-class Transactions(models.Model):
+class Transaction(models.Model):
 
     date = models.DateField(null=True, blank=True)
     description = models.TextField(null=True, blank=True)

@@ -6,32 +6,25 @@ class AccountSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Account
-        fields = [
-            'ifsc',
-            'account_number',
-            'account_opening_date',
-            'account_type',
-            'bank_name',
-            'branch_address',
-            'phone_number',
-        ]
+        fields = '__all__'
 
     def save(self, **kwargs):
-        phone = self.validated_data.get('phone')
+        validated_data = {**self.validated_data, **kwargs}
+        phone = validated_data.get('phone')
+        ifsccode = validated_data.get('ifsc')
+        account_number = validated_data.get(account_number)
         if (len(str(phone)) < 10):
             raise serializers.ValidationError("Invalid phone no.")
-        ifsccode = self.validated_data.get('ifsc')
         if len(str(ifsccode)) < 11:
             raise serializers.ValidationError("Invalid ifsc code")
-
-        account_number = self.validated_data.get(account_number)
         if len(str(account_number)) < 11 or len(str(account_number)) > 16:
             raise serializers.ValidationError("Invalid account no.")
-        return super().save(**kwargs)
+        self.validated_data = validated_data
+        return super().save()
 
 
-class TransactionsSerializer(serializers.ModelSerializer):
+class TransactionSerializer(serializers.ModelSerializer):
 
     class Meta:
-        model = models.Transactions
-        fields = "__all__ "
+        model = models.Transaction
+        fields = '__all__'

@@ -1,154 +1,186 @@
+from django.conf import settings
 from django.shortcuts import render
-from rest_framework.decorators import api_view, authentication_classes
-from rest_framework.response import Response
 from rest_framework import status
-from .authentication import CustomAuthentication
+from rest_framework.response import Response
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.pagination import PageNumberPagination
-import jwt
-from .serializers import AccountSerializer
-from .serializers import TransactionSerializer
-from .models import Account
-from .models import Transaction
-
+from rest_framework.decorators import api_view, authentication_classes
 from twilio.rest import Client
+
+from .authentication import CustomAuthentication
+from .serializers import AccountSerializer, TransactionSerializer
+from .models import Account as AccountModel, Transaction as TransactionModel
+
 
 @api_view(['GET'])
 @authentication_classes([CustomAuthentication])
 def accounts(request):
-    try:   
-
+    try:
         user = request.user
+        if (user == None):
+            return Response({'error': 'User not found'},
+                            status=status.HTTP_404_NOT_FOUND)
 
-        if user is None:
-            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
-        
+        phone_number = user['phone']
+        accounts = AccountModel.objects.all().filter(phone_number=phone_number)
 
-        account_number = request.get('account_number')
-        phone_number = request.get('phone_number')
+        if 'account_number' in request.GET:
+            account_number = request.GET['account_number']
+            account = AccountModel.objects.get(account_number=account_number)
 
-        if account_number is not None:               
-            account = Account.objects.get(account_number = account_number)
+            if account not in accounts:
+                return Response(
+                    {
+                        "error":
+                        'You are trying to access an account which is not yours'
+                    },
+                    status=401)
+
             serializer = AccountSerializer(account)
-            return serializer.data
+        else:
+            paginator = PageNumberPagination()
+            paginator.page_size = settings.PAGE_SIZE
+            if 'page_size' in request.GET:
+                paginator.page_size = request.GET['page_size']
 
+            page = paginator.paginate_queryset(accounts, request)
+            serializer = AccountSerializer(page, many=True)
+        return paginator.get_paginated_response(serializer.data)
 
-        paginator = PageNumberPagination()
-        accounts = paginator.paginate_queryset(Account.objects.all().filter(phone_number = phone_number), request)
-        
-        serializer = AccountSerializer(accounts, many=True)
-        
-        response = {
-            'accounts': serializer.data,
-        }
-        return paginator.get_paginated_response(response)
-        
     except Exception as e:
-        return Response({'error': 'An error occurred'}, status=500)
-    
-
+        return Response({'error': str(e)}, status=500)
 
 
 @api_view(['GET'])
 @authentication_classes([CustomAuthentication])
 def transactions(request):
     try:
-       
         user = request.user
 
         if user is None:
-            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
-        
-        account_number = request.get('account_number')
+            return Response({'error': 'User not found'},
+                            status=status.HTTP_404_NOT_FOUND)
 
-        start_date = request.get('start_date')
-        end_date = request.get('end_date')
-
-        if account_number is not None:               
-            paginator = PageNumberPagination()
-            transactions = Transaction.objects.filter(account = account_number).filter(Date = [start_date, end_date])
-            transactions = paginator.paginate_queryset(transactions, request)
-            serializer = TransactionSerializer(transactions, many = True)
-            response = {
-                       'transactions': serializer.data,
-                   }
-            return paginator.get_paginated_response(response)
+        phone_number = user['phone']
+        accounts = AccountModel.objects.filter(phone_number=phone_number)
+        start_date = request.GET['start_date']
+        end_date = request.GET['end_date']
 
         paginator = PageNumberPagination()
-        list_transaction = Transaction.objects.all().filter(Date = [start_date, end_date])
-        transactions = paginator.paginate_queryset(list_transaction, request)
-        
-        serializer = TransactionSerializer(transactions, many=True)
-        
-        response = {
-            'transactions': serializer.data,
-        }
-        return paginator.get_paginated_response(response)
-        
-    except Exception as e:
-        return Response({'error': 'An error occurred'}, status=500)
+        paginator.page_size = settings.PAGE_SIZE
+        if 'page_size' in request.GET:
+            paginator.page_size = request.GET['page_size']
 
-    
-    
+        if 'account_number' in request.GET:
+            account_number = request.GET['account_number']
+            account = AccountModel.objects.get(pk=account_number)
+
+            if account not in accounts:
+                return Response(
+                    {
+                        'error':
+                        'You are trying to access an account which is not yours'
+                    },
+                    status=401)
+
+            transactions = TransactionModel.objects.filter(
+                account=account).filter(date__gte=start_date).filter(
+                    date__lte=end_date)
+        else:
+            transactions = TransactionModel.objects.filter(
+                account__in=accounts).filter(date__gte=start_date).filter(
+                    date__lte=end_date)
+
+        page = paginator.paginate_queryset(transactions, request)
+        serializer = TransactionSerializer(page, many=True)
+        return paginator.get_paginated_response(serializer.data)
+
+    except Exception as e:
+        return Response({'error': str(e)}, status=500)
+
+
 @api_view(['POST'])
 @authentication_classes([CustomAuthentication])
 def create_account(request):
     try:
-        account_number = request.data["account_number"]
-        account_exists = models.Account.objects.get("account_number")
-        if(account_exists is not None) :
-            return Response({'message':'an account with that account number already exists'},status=400)
-        password = request.data["password"]
-        ifsc = request.data["ifsc_code"]
-        account_opening_date = request.data["account_opening_date"]
-        account_type = request.data["account_type"]
-        bank_name = request.data["bank_name"]
-        branch_address = request.data["branch_address"]
-        branch_name = request.data["branch_name"]
-        ph_No = request.data["phone"]
+        user = request.user
 
-        new_account = serializers.AccountSerializer(request)
+        if user is None:
+            return Response({'error': 'User not found'},
+                            status=status.HTTP_404_NOT_FOUND)
+
+        data = {}
+        data['account_number'] = request.data["account_number"]
+        account_exists = AccountModel.objects.get(data['account_number'])
+
+        if (account_exists is not None):
+            return Response(
+                {
+                    'error':
+                    'an account with that account number already exists'
+                },
+                status=400)
+
+        data['ifsc'] = request.data["ifsc_code"]
+        data['branch_name'] = request.data["branch_name"]
+        data['account_opening_date'] = request.data["account_opening_date"]
+        data['account_type'] = request.data["account_type"]
+        data['bank_name'] = request.data["bank_name"]
+        data['branch_address'] = request.data["branch_address"]
+        data['phone_number'] = user["phone"]
+
+        new_account = AccountSerializer(data=data)
+        new_account.is_valid(raise_exception=True)
         new_account.save()
 
-        # account_sid = "AC031bd3d4e1958d1a580cbf9ddce40b90"
         account_sid = settings.ACCOUNTS_SID
-        # auth_token = "8766fe4f0d4cd538a329e60ed2c1a8fe"
         auth_token = settings.AUTH_TOKEN
         client = Client(account_sid, auth_token)
         message = client.messages.create(
-        body="Congratulations! Account created successfully.",
-        from_=settings.PHONE,
-        to="+91" + ph_No
-        )
-        print(message.sid)
+            body="Congratulations! Account created successfully.",
+            from_=settings.PHONE,
+            to="+91" + data['phone_number'])
 
-        return Response({'message':'account created successfully'})
-    
+        return Response({'message': 'account created successfully'})
+
     except Exception as e:
-        return Response({'message': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return Response({'error': str(e)},
+                        status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-@api_view(['POST'])
+
+@api_view(['DELETE'])
 @authentication_classes([CustomAuthentication])
 def delete_account(request):
     try:
-        account_number = request.data["account_number"]
-        account_exists = models.Account.objects.get("account_number")
-        if(account_exists is None) :
-            return Response({'message':'account with that account number does not exists, nothing to delete'},status=400)
-        models.Account.objects.remove(account_number)
+        user = request.user
 
-        # ph_No = request.data["phone"]
-        # # account_sid = "AC031bd3d4e1958d1a580cbf9ddce40b90"
-        # account_sid = settings.ACCOUNTS_SID
-        # # auth_token = "8766fe4f0d4cd538a329e60ed2c1a8fe"
-        # auth_token = settings.AUTH_TOKEN
-        # client = Client(account_sid, auth_token)
-        # message = client.messages.create(
-        # body="Account deleted successfully.",
-        # from_=settings.PHONE,
-        # to="+91" + ph_No
-        # )
-        # print(message.sid)
-        
+        if user is None:
+            return Response({'error': 'User not found'},
+                            status=status.HTTP_404_NOT_FOUND)
+
+        account_number = request.data["account_number"]
+        account = AccountModel.objects.get(account_number)
+
+        if (account is None):
+            return Response(
+                {
+                    'error':
+                    'account with that account number does not exists, nothing to delete'
+                },
+                status=400)
+
+        if account.phone_number != user['phone']:
+            return Response(
+                {
+                    'error':
+                    'You are trying to access an account which is not yours'
+                },
+                status=401)
+
+        AccountModel.objects.remove(account_number)
+        return Response({"message": "account deleted successfully"},
+                        status=200)
+
     except Exception as e:
-        return Response({'message': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return Response({'error': str(e)},
+                        status=status.HTTP_500_INTERNAL_SERVER_ERROR)

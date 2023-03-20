@@ -126,10 +126,12 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': [
-        'BankingAPI.authentication.CustomAuthentication',
-    ]
-}
+# REST_FRAMEWORK = {
+#     'DEFAULT_AUTHENTICATION_CLASSES': [
+#         'BankingMicroService.BankingAPI.authentication.CustomAuthentication',
+#     ]
+# }
 
-USERS_MICROSERVICE_LINK = ''
+USERS_MICROSERVICE_LINK = 'http://localhost:8000/api/verify_token'
+
+PAGE_SIZE = 10
