@@ -30,8 +30,8 @@ class AccountSerializer(serializers.ModelSerializer):
         return super().save(**kwargs)
 
 
-class TransactionsSerializer(serializers.ModelSerializer):
+class TransactionSerializer(serializers.ModelSerializer):
 
     class Meta:
-        model = models.Transactions
-        fields = "__all__ "
+        model = models.Transaction
+        fields = '__all__'
