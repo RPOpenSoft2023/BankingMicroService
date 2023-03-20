@@ -1,6 +1,4 @@
 from django.shortcuts import render
-
-# Create your views here.
 from rest_framework.decorators import api_view, authentication_classes
 from rest_framework.response import Response
 from rest_framework import status
@@ -87,7 +85,4 @@ def transactions(request):
         
     except Exception as e:
         return Response({'error': 'An error occurred'}, status=500)
-    
-
-
 
