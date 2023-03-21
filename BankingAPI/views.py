@@ -1,10 +1,18 @@
 from django.conf import settings
 from django.shortcuts import render
+
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import authentication, permissions
+from rest_framework.exceptions import AuthenticationFailed
+
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.decorators import api_view, authentication_classes
+
+import pandas as pd
 from twilio.rest import Client
 
 from .authentication import CustomAuthentication
@@ -111,15 +119,17 @@ def create_account(request):
 
         data = {}
         data['account_number'] = request.data["account_number"]
-        account_exists = AccountModel.objects.get(data['account_number'])
-
-        if (account_exists is not None):
+        try:
+            account_exists = AccountModel.objects.get(
+                pk=data['account_number'])
             return Response(
                 {
                     'error':
                     'an account with that account number already exists'
                 },
                 status=400)
+        except:
+            pass
 
         data['ifsc'] = request.data["ifsc_code"]
         data['branch_name'] = request.data["branch_name"]
@@ -184,3 +194,36 @@ def delete_account(request):
     except Exception as e:
         return Response({'error': str(e)},
                         status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(["POST"])
+@authentication_classes([CustomAuthentication])
+def add_transactions(request, format=None):
+    try:
+        user = request.user
+
+        if user is None:
+            return Response({'error': 'User not found'},
+                            status=status.HTTP_404_NOT_FOUND)
+
+        account_number = request.data["account_number"]
+        account = AccountModel.objects.get(pk=account_number)
+
+        transactions_file = request.FILES.get('transactions')
+        df = pd.read_csv(transactions_file)
+
+        for row in df.iterrows():
+            transaction = TransactionSerializer(
+                account=account,
+                Date=row['Date'],
+                description=row['description'],
+                Debit=row['Debit'],
+                Credit=row['Credit'],
+                Balance=row['Balance'],
+            )
+            print(transaction)
+            # transaction.save()
+        return Response({'message': 'Transactions updated'})
+
+    except Exception as e:
+        return Response({'message': f'Error: {str(e)}'})
