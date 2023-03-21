@@ -16,7 +16,7 @@ from .models import Account, Transaction
 from .utils import *
 
 
-TRANSACTION_COLS = ['Txn Date', 'Description', 'Debit','Credit', 'Balance']
+TRANSACTION_COLS = ['Date', 'Particulars', 'Debit','Credit', 'Balance']
 
 @api_view(['GET'])
 @authentication_classes([CustomAuthentication])
@@ -154,17 +154,21 @@ def add_transactions(request):
             return Response({'error': 'You are trying to add transactions for an account which is not yours'}, status=401)
 
         transactions_file = request.FILES.get('transactions')
-        df = pd.read_excel(transactions_file, usecols=TRANSACTION_COLS)
+        df = pd.read_csv(transactions_file, usecols=TRANSACTION_COLS)
+        df = df.dropna(subset=['Date'])
+        df = df.reset_index()
+        df = df.fillna(value=0)
 
-        for row in df.iterrows():
-            transaction = TransactionSerializer(
-                account=account,
-                date=row['Txn Date'],
-                description=row['Description'],
-                debit=row['Debit'],
-                credit=row['Credit'],
-                balance=row['Balance'],
-            )
+        for i in range(len(df)):
+            data={
+                "account":str(account),
+                "date":df.loc[i,'Date'],
+                "description":df.loc[i,'Particulars'],
+                "debit":df.loc[i,'Debit'].astype('int'),
+                "credit":df.loc[i,'Credit'].astype('int'),
+                "balance":df.loc[i,'Balance'].astype('int'),
+            }
+            transaction = TransactionSerializer(data=data)
             if transaction.is_valid(raise_exception=True):
                 transaction.save()
 
