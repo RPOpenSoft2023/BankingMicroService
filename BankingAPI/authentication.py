@@ -7,6 +7,7 @@ from django.conf import settings
 import requests
 from rest_framework.response import Response
 import json
+from rest_framework.views import exception_handler
 
 class CustomAuthentication(BaseAuthentication):
     def authenticate(self, request):
@@ -22,12 +23,11 @@ class CustomAuthentication(BaseAuthentication):
            
             if response.ok :
                 user = response.json()
-                print(user)
+                # print(user)
                 return (user, None)
-
-            error = json.loads(response.json())
-            return (None, {"status_code" : response.status_code, "error" : error})
+            error = response.json()
+            raise AuthenticationFailed({"status":response.status_code, "error" : error})
 
         except Exception as e:
-            return (None, str(e))
+            raise AuthenticationFailed({"status":response.status_code, "error":str(e)})
 
