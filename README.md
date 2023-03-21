@@ -65,5 +65,5 @@
 - To access the django admin panel use following url
 
   ```
-  localhost:8000/admin
+  localhost:8001/admin
   ```
