@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-jp-t89mj&umufry11x0+w!r!#6y2x$527%l+%93zf=kf4^p^&4
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -41,9 +41,12 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     'rest_framework',
+    'corsheaders'
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.common.CommonMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -52,6 +55,20 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+CORS_ORIGIN_ALLOW_ALL = True
+
+CORS_ALLOW_METHODS=[
+    'GET','POST','PUT','DELETE','PATCH','OPTIONS'
+]
+
+CORS_ALLOWED_ORIGINS = ['http://*']
+
+CORS_ALLOW_CREDENTIALS=True
+
+from corsheaders.defaults import default_headers
+
+CORS_ALLLOW_HEADERS = list(default_headers)
 
 ROOT_URLCONF = 'BankingMicroService.urls'
 
