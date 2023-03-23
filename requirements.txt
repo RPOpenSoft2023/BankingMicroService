@@ -16,10 +16,6 @@ twilio==7.16.5
 urllib3==1.26.15
 yapf==0.32.0
 django-cors-headers==3.14.0
-<<<<<<< HEAD
-ifscApi==0.2
-=======
 gunicorn==20.1.0
 ifscApi==0.2
 psycopg2==2.9.5
->>>>>>> a233b7ca163c9be5e6f7c72a16ca199f830442b4
