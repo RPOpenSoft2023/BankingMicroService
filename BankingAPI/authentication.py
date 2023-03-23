@@ -29,5 +29,5 @@ class CustomAuthentication(BaseAuthentication):
             raise AuthenticationFailed({"status":response.status_code, "error" : error})
 
         except Exception as e:
-            raise AuthenticationFailed({"status":response.status_code, "error":str(e)})
+            raise AuthenticationFailed({"status":400, "error":str(e)})
 
