@@ -24,7 +24,7 @@ def accounts(request):
     try:
         user = request.user
 
-        phone_number = user['phone']
+        phone_number = user['phone_number']
         accounts = Account.objects.all().filter(phone_number=phone_number)
 
         if 'account_number' in request.GET:
@@ -55,11 +55,10 @@ def accounts(request):
 def transactions(request):
     try:
         user = request.user
-        phone_number = user['phone']
+        phone_number = user['phone_number']
 
         accounts = Account.objects.filter(phone_number=phone_number)
-        start_date = request.GET['start_date']
-        end_date = request.GET['end_date']
+        
 
         paginator = PageNumberPagination()
         paginator.page_size = settings.PAGE_SIZE
@@ -74,9 +73,16 @@ def transactions(request):
             if account not in accounts:
                 return Response({'error':'You are trying to access an account which is not yours'}, status=401)
 
-            transactions = Transaction.objects.filter(
-                account=account).filter(date__gte=start_date).filter(
-                    date__lte=end_date)
+            if 'start_date' in request.GET.keys():
+                start_date = request.GET['start_date']
+                end_date = request.GET['end_date']
+
+                transactions = Transaction.objects.filter(
+                    account=account).filter(date__gte=start_date).filter(
+                        date__lte=end_date)
+            else:
+                transactions = Transaction.objects.filter(
+                    account=account)
             print(transactions)
         else:
             transactions = Transaction.objects.filter(
@@ -105,13 +111,12 @@ def create_account(request):
         if branch_details == "Not Found":
             return Response({"error":"Invalid IFSC code"}, status=404)
 
-        if int(request.data["phone_number"]) != int(user['phone']):
+        if int(request.data["phone_number"]) != int(user['phone_number']):
             return Response({'error': "User's phone number doesn't match with the one provided. "}, status=401)
 
         account = AccountSerializer(data=request.data)
         account.is_valid(raise_exception=True)
         account.save()
-
         return Response({
             'message': 'Account created successfully',
             'account': account.data
@@ -131,7 +136,7 @@ def delete_account(request):
         account_number = request.data["account_number"]
         account = Account.objects.get(account_number=account_number)
         print(account)
-        if int(account.phone_number) != int(user['phone']):
+        if int(account.phone_number) != int(user['phone_number']):
             return Response({'error':'You are trying to access an account which is not yours'}, status=401)
 
         account.delete()
@@ -150,7 +155,7 @@ def add_transactions(request):
         account_number = request.data["account_number"]
         account = Account.objects.get(pk=account_number)
 
-        if int(account.phone_number) != int(user['phone']):
+        if int(account.phone_number) != int(user['phone_number']):
             return Response({'error': 'You are trying to add transactions for an account which is not yours'}, status=401)
 
         transactions_file = request.FILES.get('transactions')

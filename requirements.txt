@@ -15,3 +15,7 @@ sqlparse==0.4.3
 twilio==7.16.5
 urllib3==1.26.15
 yapf==0.32.0
+django-cors-headers==3.14.0
+gunicorn==20.1.0
+ifscApi==0.2
+psycopg2==2.9.5
