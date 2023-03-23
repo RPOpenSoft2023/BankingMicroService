@@ -76,8 +76,6 @@ def transactions(request):
                 transactions = transactions.filter(date__gte=request.GET["start_date"])
             if "end_date" in request.GET:
                 transactions = transactions.filter(date__lte=request.GET["end_date"])
-
-            print(transactions)
         else:
             transactions = Transaction.objects.filter(account__in=accounts)
             if "start_date" in request.GET:
@@ -111,7 +109,6 @@ def create_account(request):
         account = AccountSerializer(data=request.data)
         account.is_valid(raise_exception=True)
         account.save()
-
         return Response({
             'message': 'Account created successfully',
             'account': account.data
@@ -173,6 +170,7 @@ def delete_account(request):
         account_number = request.data["account_number"]
         account = Account.objects.get(account_number=account_number)
         print(account)
+        
         if str(account.phone_number) != str(user['phone_number']):
             return Response({'error':'You are trying to access an account which is not yours'}, status=401)
 
