@@ -7,4 +7,5 @@ urlpatterns = [
     path('create_account/', create_account),
     path('delete_account/', delete_account),
     path('add_transactions/', add_transactions),
+    path('update_account/', update_account),
 ]

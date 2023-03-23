@@ -24,7 +24,7 @@ def accounts(request):
     try:
         user = request.user
 
-        phone_number = user['phone']
+        phone_number = user['phone_number']
         accounts = Account.objects.all().filter(phone_number=phone_number)
 
         if 'account_number' in request.GET:
@@ -47,7 +47,7 @@ def accounts(request):
             return paginator.get_paginated_response(serializer.data)
 
     except Exception as e:
-        return Response({'error': str(e)}, status=500)
+        return Response({'error': str(e)}, status=400)
 
 
 @api_view(['GET'])
@@ -55,11 +55,9 @@ def accounts(request):
 def transactions(request):
     try:
         user = request.user
-        phone_number = user['phone']
+        phone_number = user['phone_number']
 
         accounts = Account.objects.filter(phone_number=phone_number)
-        start_date = request.GET['start_date']
-        end_date = request.GET['end_date']
 
         paginator = PageNumberPagination()
         paginator.page_size = settings.PAGE_SIZE
@@ -69,27 +67,29 @@ def transactions(request):
         if 'account_number' in request.GET:
             account_number = request.GET['account_number']
             account = Account.objects.get(pk=account_number)
-            print(account)
 
             if account not in accounts:
                 return Response({'error':'You are trying to access an account which is not yours'}, status=401)
 
-            transactions = Transaction.objects.filter(
-                account=account).filter(date__gte=start_date).filter(
-                    date__lte=end_date)
+            transactions = Transaction.objects.filter(account=account)
+            if "start_date" in request.GET:
+                transactions = transactions.filter(date__gte=request.GET["start_date"])
+            if "end_date" in request.GET:
+                transactions = transactions.filter(date__lte=request.GET["end_date"])
+
             print(transactions)
         else:
-            transactions = Transaction.objects.filter(
-                account__in=accounts).filter(date__gte=start_date).filter(
-                    date__lte=end_date)
+            transactions = Transaction.objects.filter(account__in=accounts)
+            if "start_date" in request.GET:
+                transactions = transactions.filter(date__gte=request.GET["start_date"])
+            if "end_date" in request.GET:
+                transactions = transactions.filter(date__lte=request.GET["end_date"])
 
         page = paginator.paginate_queryset(transactions, request)
         serializer = TransactionSerializer(page, many=True)
-        print(serializer.data)
         return paginator.get_paginated_response(serializer.data)
-
     except Exception as e:
-        return Response({'error': str(e)}, status=500)
+        return Response({'error': str(e)}, status=400)
 
 
 @api_view(['POST'])
@@ -105,8 +105,8 @@ def create_account(request):
         if branch_details == "Not Found":
             return Response({"error":"Invalid IFSC code"}, status=404)
 
-        if int(request.data["phone_number"]) != int(user['phone']):
-            return Response({'error': "User's phone number doesn't match with the one provided. "}, status=401)
+        if str(request.data["phone_number"]) != str(user['phone_number']):
+            return Response({'error': "User's phone number doesn't match with the one provided."}, status=401)
 
         account = AccountSerializer(data=request.data)
         account.is_valid(raise_exception=True)
@@ -120,6 +120,49 @@ def create_account(request):
     except Exception as e:
         return Response({'error': str(e)},
                         status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+@api_view(['PUT'])
+@authentication_classes([CustomAuthentication])
+def update_account(request):
+    try:
+        user = request.user
+
+        account_number = str(request.data["account_number"])
+        print(account_number)
+        account = Account.objects.filter(account_number=account_number).first()
+
+        if account is None:
+            return Response({'error':'No such account exists'}, status=400)
+
+        if str(account.phone_number) != str(user['phone_number']):
+            return Response({'error':'You are trying to access an account which is not yours'}, status=401)
+        
+        if "phone_number" in request.data:
+            return Response({"error":"You can't update phone number directly"}, status=403)
+        
+        if "ifsc" in request.data:
+            branch_details = bank_details(request.data["ifsc"])
+            if branch_details == "Not Found":
+                return Response({"error":"Invalid IFSC code"}, status=404)
+            account.ifsc = request.data["ifsc"]
+
+        if ("account_number" in request.data):
+            print("Reached")
+            if(len(account_number) < 11 or len(account_number) > 16):
+                return Response({"error":"Invalid account number"}, status=400)
+        
+        for key in request.data:
+            print(key)
+            if key in ["ifsc", "phone_number"]: continue
+            print(request.data[key])
+            setattr(account, key, request.data[key])
+
+        account.save()
+
+        return Response({"message":"User data updated successfully"}, status=200)
+    
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['DELETE'])
@@ -127,11 +170,10 @@ def create_account(request):
 def delete_account(request):
     try:
         user = request.user
-        # print(user)
         account_number = request.data["account_number"]
         account = Account.objects.get(account_number=account_number)
         print(account)
-        if int(account.phone_number) != int(user['phone']):
+        if str(account.phone_number) != str(user['phone_number']):
             return Response({'error':'You are trying to access an account which is not yours'}, status=401)
 
         account.delete()
@@ -150,7 +192,7 @@ def add_transactions(request):
         account_number = request.data["account_number"]
         account = Account.objects.get(pk=account_number)
 
-        if int(account.phone_number) != int(user['phone']):
+        if str(account.phone_number) != str(user['phone_number']):
             return Response({'error': 'You are trying to add transactions for an account which is not yours'}, status=401)
 
         transactions_file = request.FILES.get('transactions')
@@ -175,4 +217,4 @@ def add_transactions(request):
         return Response({'message': 'Transactions updated successfully'}, status=200)
 
     except Exception as e:
-        return Response({'error': str(e)}, status=500)
+        return Response({'error': str(e)}, status=400)
