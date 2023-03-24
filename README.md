@@ -60,7 +60,7 @@
 - Run the server
 
   ```
-  python manage.py runserver
+  python manage.py runserver 8001
   ```
 - To access the django admin panel use following url
 
