@@ -251,6 +251,7 @@ def add_transactions(request):
                 "debit": df.loc[i, 'Debit'].astype('int'),
                 "credit": df.loc[i, 'Credit'].astype('int'),
                 "balance": df.loc[i, 'Balance'].astype('int'),
+                "category": df.loc[i, 'Category'],
             }
             transaction = TransactionSerializer(data=data)
             if transaction.is_valid(raise_exception=True):
@@ -263,7 +264,7 @@ def add_transactions(request):
         return Response({'error': str(e)}, status=400)
 
 
-@api_view(["POST"])
+@api_view(["PUT"])
 @authentication_classes([CustomAuthentication])
 def edit_transaction(request):
     try:
@@ -282,26 +283,27 @@ def edit_transaction(request):
                 },
                 status=401)
 
-        new_category = request.data.get('new_category')
+        new_category = str(request.data.get('new_category'))
         if new_category:
             account.category = new_category
 
-        note = request.data.get('note')
+        note = str(request.data.get('note'))
         if note:
             account.note = note
 
-        transaction = TransactionSerializer(transaction)
+        transaction = TransactionSerializer(data={
+            **request.data, 'account': account
+        })
         transaction.is_valid(raise_exception=True)
         transaction.save()
 
-        return Response({'message': 'Transactions updated successfully'},
-                        status=200)
+        return Response({'message': 'transaction updated'}, status=200)
 
     except Exception as e:
         return Response({'error': str(e)}, status=400)
 
 
-@api_view(['POST'])
+@api_view(['PUT'])
 @authentication_classes([CustomAuthentication])
 def add_transaction(request):
     try:

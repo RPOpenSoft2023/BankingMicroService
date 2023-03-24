@@ -8,5 +8,6 @@ urlpatterns = [
     path('delete_account/', delete_account),
     path('add_transactions/', add_transactions),
     path('add_transaction/', add_transaction),
+    path('edit_transaction/', edit_transaction),
     path('update_account/', update_account),
 ]
