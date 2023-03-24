@@ -118,15 +118,10 @@ def create_account(request):
         if branch_details == "Not Found":
             return Response({"error": "Invalid IFSC code"}, status=404)
 
-        if str(request.data["phone_number"]) != str(user['phone_number']):
-            return Response(
-                {
-                    'error':
-                    "User's phone number doesn't match with the one provided."
-                },
-                status=401)
-
-        account = AccountSerializer(data=request.data)
+        account = AccountSerializer(
+            data={
+                **request.data, 'phone_number': user['phone_number']
+            })
         account.is_valid(raise_exception=True)
         account.save()
         return Response(
