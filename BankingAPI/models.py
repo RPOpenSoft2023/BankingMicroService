@@ -30,7 +30,9 @@ class Transaction(models.Model):
     debit = models.IntegerField(null=True, blank=True)
     credit = models.IntegerField(null=True, blank=True)
     balance = models.IntegerField(null=True, blank=True)
-    account = models.ForeignKey(to='Account', on_delete=models.CASCADE)
+    account = models.ForeignKey(to='Account', null=True, blank=True, on_delete=models.CASCADE)
+    category = models.CharField(max_length=255, null=True, blank=True)
+    note = models.TextField(null=True, blank=True)
 
     def __str__(self):
         return str(self.description)

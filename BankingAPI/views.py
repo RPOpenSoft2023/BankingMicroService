@@ -216,3 +216,28 @@ def add_transactions(request):
 
     except Exception as e:
         return Response({'error': str(e)}, status=400)
+
+@api_view(['POST'])
+@authentication_classes([CustomAuthentication])
+def add_transaction(request):
+    try:
+        user = request.user
+
+        account_number = request.data['account_number']
+
+        account = Account.objects.filter(account_number=account_number).first()
+
+        if account is None:
+            return Response({'error':'No such account exists'}, status=400)
+        
+        if str(account.phone_number) != str(user['phone_number']):
+            return Response({'error':'You are trying to add transactions for an account which is not yours'}, status=403)
+        
+        serializer = TransactionSerializer(data={**request.data, 'account': account})
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        return Response({'success':'Transaction added successfully'}, status=200)
+
+    except Exception as e:
+        return Response({'error': str(e)}, status=400)
