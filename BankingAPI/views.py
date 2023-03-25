@@ -342,16 +342,15 @@ def add_transaction(request):
         return Response({'error': str(e)}, status=400)
 
 
-@api_view(['PUT'])
+@api_view(['GET'])
 @authentication_classes([CustomAuthentication])
 def get_transaction(request):
     try:
         user = request.user
 
-        transaction_number = request.data['transaction_number']
+        transaction_id = request.data['transaction_id']
 
-        transaction = Transaction.objects.filter(
-            transaction_number=transaction_number).first()
+        transaction = Transaction.objects.filter(id=transaction_id).first()
 
         if transaction is None:
             return Response({'error': 'No such account exists'}, status=400)
@@ -365,7 +364,7 @@ def get_transaction(request):
                 status=403)
 
         serializer = TransactionSerializer(transaction)
-        return Response(serializer.save(), status=200)
+        return Response(serializer.data, status=200)
 
     except Exception as e:
         return Response({'error': str(e)}, status=400)

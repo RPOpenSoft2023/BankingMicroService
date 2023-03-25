@@ -138,6 +138,6 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 #     ]
 # }
 
-USERS_MICROSERVICE_LINK = 'http://localhost:8000/user/api/verify_token'
+USERS_MICROSERVICE_LINK = 'http://127.0.0.1:8000/user/api/verify_token'
 
 PAGE_SIZE = 10
