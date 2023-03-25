@@ -15,7 +15,7 @@ from .serializers import AccountSerializer, TransactionSerializer
 from .models import Account, Transaction
 from .utils import *
 
-TRANSACTION_COLS = ['Date', 'Particulars', 'Debit', 'Credit', 'Balance']
+TRANSACTION_COLS = ['Date', 'Particulars', 'Debit', 'Credit', 'Balance', 'Category']
 
 
 @api_view(['GET'])
@@ -246,7 +246,7 @@ def add_transactions(request):
                 "debit": df.loc[i, 'Debit'].astype('int'),
                 "credit": df.loc[i, 'Credit'].astype('int'),
                 "balance": df.loc[i, 'Balance'].astype('int'),
-                "category": df.loc[i, 'Category'],
+                "category": 'others' if df.loc[i, 'Category'] == 0 else df.loc[i, 'Category'],
             }
             transaction = TransactionSerializer(data=data)
             if transaction.is_valid(raise_exception=True):
