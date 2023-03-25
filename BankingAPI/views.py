@@ -15,7 +15,9 @@ from .serializers import AccountSerializer, TransactionSerializer
 from .models import Account, Transaction
 from .utils import *
 
-TRANSACTION_COLS = ['Date', 'Particulars', 'Debit', 'Credit', 'Balance', 'Category']
+TRANSACTION_COLS = [
+    'Date', 'Particulars', 'Debit', 'Credit', 'Balance', 'Category'
+]
 
 
 @api_view(['GET'])
@@ -240,13 +242,21 @@ def add_transactions(request):
 
         for i in range(len(df)):
             data = {
-                "account": str(account),
-                "date": df.loc[i, 'Date'],
-                "description": df.loc[i, 'Particulars'],
-                "debit": df.loc[i, 'Debit'].astype('int'),
-                "credit": df.loc[i, 'Credit'].astype('int'),
-                "balance": df.loc[i, 'Balance'].astype('int'),
-                "category": 'others' if df.loc[i, 'Category'] == 0 else df.loc[i, 'Category'],
+                "account":
+                str(account),
+                "date":
+                df.loc[i, 'Date'],
+                "description":
+                df.loc[i, 'Particulars'],
+                "debit":
+                df.loc[i, 'Debit'].astype('int'),
+                "credit":
+                df.loc[i, 'Credit'].astype('int'),
+                "balance":
+                df.loc[i, 'Balance'].astype('int'),
+                "category":
+                'others' if df.loc[i, 'Category'] == 0 else df.loc[i,
+                                                                   'Category'],
             }
             transaction = TransactionSerializer(data=data)
             if transaction.is_valid(raise_exception=True):
@@ -327,6 +337,35 @@ def add_transaction(request):
 
         return Response({'success': 'Transaction added successfully'},
                         status=200)
+
+    except Exception as e:
+        return Response({'error': str(e)}, status=400)
+
+
+@api_view(['PUT'])
+@authentication_classes([CustomAuthentication])
+def get_transaction(request):
+    try:
+        user = request.user
+
+        transaction_number = request.data['transaction_number']
+
+        transaction = Transaction.objects.filter(
+            transaction_number=transaction_number).first()
+
+        if transaction is None:
+            return Response({'error': 'No such account exists'}, status=400)
+
+        if str(transaction.account.phone_number) != str(user['phone_number']):
+            return Response(
+                {
+                    'error':
+                    'You are trying to get transactions for an account which is not yours'
+                },
+                status=403)
+
+        serializer = TransactionSerializer(transaction)
+        return Response(serializer.save(), status=200)
 
     except Exception as e:
         return Response({'error': str(e)}, status=400)

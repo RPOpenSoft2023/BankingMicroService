@@ -10,4 +10,5 @@ urlpatterns = [
     path('add_transaction/', add_transaction),
     path('edit_transaction/', edit_transaction),
     path('update_account/', update_account),
+    path('get_transaction/', get_transaction),
 ]
