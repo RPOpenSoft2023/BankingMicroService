@@ -83,7 +83,7 @@ def transactions(request):
                     },
                     status=401)
 
-            transactions = Transaction.objects.filter(account=account)
+            transactions = Transaction.objects.filter(account=account).order_by('id')
             if "start_date" in request.GET:
                 transactions = transactions.filter(
                     date__gte=request.GET["start_date"])
@@ -283,17 +283,7 @@ def edit_transaction(request):
                 },
                 status=401)
 
-        new_category = str(request.data.get('new_category'))
-        if new_category:
-            account.category = new_category
-
-        note = str(request.data.get('note'))
-        if note:
-            account.note = note
-
-        transaction = TransactionSerializer(data={
-            **request.data, 'account': account
-        })
+        transaction = TransactionSerializer(transaction, data=request.data, partial=True)
         transaction.is_valid(raise_exception=True)
         transaction.save()
 

@@ -1,0 +1,109 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: banking-ms
+  labels:
+    app: banking-ms
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: banking-ms
+  template:
+    metadata:
+      labels:
+        app: banking-ms
+    spec:
+      containers:
+      - name: banking-cont
+        # Replace  with your project ID or use `make template`
+        image: gcr.io/daring-tracer-381019/banking-ms
+        # This setting makes nodes pull the docker image every time before
+        # starting the pod. This is useful when debugging, but should be turned
+        # off in production.
+        imagePullPolicy: Always
+        env:
+            - name: USERS_MICROSERVICE_LINK
+              value: https://users-ms.apps.sandbox-m3.1530.p1.openshiftapps.com/user/api/verify_token
+            # [START cloudsql_secrets]
+            - name: DATABASE_NAME
+              value: banking-db
+            - name: DATABASE_USER
+              valueFrom:
+                secretKeyRef:
+                  name: cloudsql
+                  key: username
+            - name: DATABASE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: cloudsql
+                  key: password
+            # [END cloudsql_secrets]
+        ports:
+        - containerPort: 8080
+
+      # [START proxy_container]
+      - image: gcr.io/cloudsql-docker/gce-proxy:1.16
+        name: cloudsql-proxy
+        command: ["/cloud_sql_proxy", "--dir=/cloudsql",
+                  "-instances=daring-tracer-381019:us-west1:opensoft2023=tcp:5432",
+                  "-credential_file=/secrets/cloudsql/credentials.json"]
+        volumeMounts:
+          - name: cloudsql-oauth-credentials
+            mountPath: /secrets/cloudsql
+            readOnly: true
+          - name: cloudsql
+            mountPath: /cloudsql
+      # [END proxy_container] 
+      # [START volumes]
+      volumes:
+        - name: cloudsql-oauth-credentials
+          secret:
+            secretName: cloudsql-oauth-credentials
+        - name: cloudsql
+          emptyDir: {}
+      # [END volumes]        
+# [END kubernetes_deployment]
+
+---
+
+# [START service]
+# The polls service provides a load-balancing proxy over the polls app
+# pods. By specifying the type as a 'LoadBalancer', Kubernetes Engine will
+# create an external HTTP load balancer.
+# For more information about Services see:
+#   https://kubernetes.io/docs/concepts/services-networking/service/
+# For more information about external HTTP load balancing see:
+#   https://kubernetes.io/docs/tasks/access-application-cluster/create-external-load-balancer/
+apiVersion: v1
+kind: Service
+metadata:
+  name: banking-ms
+  labels:
+    app: banking-ms
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 80
+    targetPort: 8080
+  selector:
+    app: banking-ms
+# [END service]
+---
+
+# [START route]
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  labels:
+    type: sharded 
+  name: banking-ms
+  namespace: shiftbank-dev
+spec:
+  subdomain: banking-ms
+  tls:
+    termination: edge
+  to:
+    kind: Service
+    name: banking-ms
+# [END route]
