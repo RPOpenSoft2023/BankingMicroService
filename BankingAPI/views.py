@@ -368,3 +368,14 @@ def get_transaction(request):
 
     except Exception as e:
         return Response({'error': str(e)}, status=400)
+
+
+@api_view(['GET'])
+@authentication_classes([CustomAuthentication])
+def get_categories(request):
+    try:
+        categories = ['shoppingAndFood', 'others', 'travelling', 
+                      'investmentAndSaving', 'medicalAndHealthcare', 'utilities']
+        return Response(categories, status=200)
+    except Exception as e:
+        return Response({'error': str(e)}, status=400)

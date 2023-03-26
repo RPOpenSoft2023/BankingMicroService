@@ -11,4 +11,5 @@ urlpatterns = [
     path('edit_transaction/', edit_transaction),
     path('update_account/', update_account),
     path('get_transaction/', get_transaction),
+    path('get_categories/', get_categories)
 ]
