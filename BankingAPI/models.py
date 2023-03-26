@@ -48,6 +48,7 @@ class Transaction(models.Model):
                                 choices=CATEGORY_CHOICES,
                                 default='others')
     note = models.TextField(null=True, blank=True)
+    reports_count = models.IntegerField(null=True, blank=True)
 
     def __str__(self):
         return str(self.description)

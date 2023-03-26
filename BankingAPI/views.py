@@ -145,7 +145,6 @@ def update_account(request):
         user = request.user
 
         account_number = str(request.data["account_number"])
-        print(account_number)
         account = Account.objects.filter(account_number=account_number).first()
 
         if account is None:
@@ -171,15 +170,12 @@ def update_account(request):
             account.ifsc = request.data["ifsc"]
 
         if ("account_number" in request.data):
-            print("Reached")
             if (len(account_number) < 11 or len(account_number) > 16):
                 return Response({"error": "Invalid account number"},
                                 status=400)
 
         for key in request.data:
-            print(key)
             if key in ["ifsc", "phone_number"]: continue
-            print(request.data[key])
             setattr(account, key, request.data[key])
 
         account.save()
@@ -198,7 +194,6 @@ def delete_account(request):
         user = request.user
         account_number = request.data["account_number"]
         account = Account.objects.get(account_number=account_number)
-        print(account)
 
         if str(account.phone_number) != str(user['phone_number']):
             return Response(
@@ -374,8 +369,10 @@ def get_transaction(request):
 @authentication_classes([CustomAuthentication])
 def get_categories(request):
     try:
-        categories = ['shoppingAndFood', 'others', 'travelling', 
-                      'investmentAndSaving', 'medicalAndHealthcare', 'utilities']
+        categories = [
+            'shoppingAndFood', 'others', 'travelling', 'investmentAndSaving',
+            'medicalAndHealthcare', 'utilities'
+        ]
         return Response(categories, status=200)
     except Exception as e:
         return Response({'error': str(e)}, status=400)

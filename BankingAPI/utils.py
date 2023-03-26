@@ -7,9 +7,10 @@ import requests
 # Assign IFSC code
 ifsc = 'KKBK0005652'
 
+
 def bank_details(ifsc):
     try:
-        res = requests.get("https://ifsc.razorpay.com/"+ifsc)
+        res = requests.get("https://ifsc.razorpay.com/" + ifsc)
         return res.json()
     except Exception as e:
-        return Response({'error':e},status=200)
+        return Response({'error': e}, status=200)
