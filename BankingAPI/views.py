@@ -78,7 +78,7 @@ def transactions(request):
                     },
                     status=401)
 
-            transactions = Transaction.objects.filter(account=account)
+            transactions = Transaction.objects.filter(account=account).order_by('id')
             if "start_date" in request.GET:
                 transactions = transactions.filter(
                     date__gte=request.GET["start_date"])
@@ -140,7 +140,6 @@ def update_account(request):
         user = request.user
 
         account_number = str(request.data["account_number"])
-        print(account_number)
         account = Account.objects.filter(account_number=account_number).first()
 
         if account is None:
@@ -166,15 +165,12 @@ def update_account(request):
             account.ifsc = request.data["ifsc"]
 
         if ("account_number" in request.data):
-            print("Reached")
             if (len(account_number) < 11 or len(account_number) > 16):
                 return Response({"error": "Invalid account number"},
                                 status=400)
 
         for key in request.data:
-            print(key)
             if key in ["ifsc", "phone_number"]: continue
-            print(request.data[key])
             setattr(account, key, request.data[key])
 
         account.save()
@@ -193,7 +189,6 @@ def delete_account(request):
         user = request.user
         account_number = request.data["account_number"]
         account = Account.objects.get(account_number=account_number)
-        print(account)
 
         if str(account.phone_number) != str(user['phone_number']):
             return Response(
@@ -265,17 +260,7 @@ def edit_transaction(request):
                 },
                 status=401)
 
-        new_category = str(request.data.get('new_category'))
-        if new_category:
-            account.category = new_category
-
-        note = str(request.data.get('note'))
-        if note:
-            account.note = note
-
-        transaction = TransactionSerializer(data={
-            **request.data, 'account': account
-        })
+        transaction = TransactionSerializer(transaction, data=request.data, partial=True)
         transaction.is_valid(raise_exception=True)
         transaction.save()
 
@@ -315,5 +300,46 @@ def add_transaction(request):
         return Response({'success': 'Transaction added successfully'},
                         status=200)
 
+    except Exception as e:
+        return Response({'error': str(e)}, status=400)
+
+
+@api_view(['GET'])
+@authentication_classes([CustomAuthentication])
+def get_transaction(request):
+    try:
+        user = request.user
+
+        transaction_id = request.data['transaction_id']
+
+        transaction = Transaction.objects.filter(id=transaction_id).first()
+
+        if transaction is None:
+            return Response({'error': 'No such account exists'}, status=400)
+
+        if str(transaction.account.phone_number) != str(user['phone_number']):
+            return Response(
+                {
+                    'error':
+                    'You are trying to get transactions for an account which is not yours'
+                },
+                status=403)
+
+        serializer = TransactionSerializer(transaction)
+        return Response(serializer.data, status=200)
+
+    except Exception as e:
+        return Response({'error': str(e)}, status=400)
+
+
+@api_view(['GET'])
+@authentication_classes([CustomAuthentication])
+def get_categories(request):
+    try:
+        categories = [
+            'shoppingAndFood', 'others', 'travelling', 'investmentAndSaving',
+            'medicalAndHealthcare', 'utilities'
+        ]
+        return Response(categories, status=200)
     except Exception as e:
         return Response({'error': str(e)}, status=400)

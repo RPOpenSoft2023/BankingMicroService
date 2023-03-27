@@ -15,6 +15,8 @@ class Account(models.Model):
     branch_address = models.TextField(max_length=255, null=True, blank=True)
     phone_number = models.CharField(max_length=255, null=True, blank=True)
 
+    # reports_count = models.IntegerField(null=True, blank=True)
+
     def __str__(self):
         return str(self.account_number)
 
@@ -43,6 +45,7 @@ class Transaction(models.Model):
                                 choices=CATEGORY_CHOICES,
                                 default='others')
     note = models.TextField(null=True, blank=True)
+    reports_count = models.IntegerField(null=True, blank=True)
 
     def __str__(self):
         return str(self.description)
