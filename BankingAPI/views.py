@@ -15,9 +15,6 @@ from .serializers import AccountSerializer, TransactionSerializer
 from .models import Account, Transaction
 from .utils import *
 
-TRANSACTION_COLS = ['Date', 'Particulars', 'Debit', 'Credit', 'Balance', 'Category']
-
-
 @api_view(['GET'])
 @authentication_classes([CustomAuthentication])
 def accounts(request):
@@ -232,23 +229,13 @@ def add_transactions(request):
                 },
                 status=401)
 
-        transactions_file = request.FILES.get('transactions')
-        df = pd.read_csv(transactions_file, usecols=TRANSACTION_COLS)
-        df = df.dropna(subset=['Date'])
-        df = df.reset_index()
-        df = df.fillna(value=0)
+        transactions = request.data.get("transactions")
 
-        for i in range(len(df)):
-            data = {
-                "account": str(account),
-                "date": df.loc[i, 'Date'],
-                "description": df.loc[i, 'Particulars'],
-                "debit": df.loc[i, 'Debit'].astype('int'),
-                "credit": df.loc[i, 'Credit'].astype('int'),
-                "balance": df.loc[i, 'Balance'].astype('int'),
-                "category": 'others' if df.loc[i, 'Category'] == 0 else df.loc[i, 'Category'],
-            }
-            transaction = TransactionSerializer(data=data)
+        if transactions is None or len(list(transactions))==0:
+            return Response({'error':'There are no transactions to add'}, status=400)
+
+        for i in list(transactions):
+            transaction = TransactionSerializer(data={**i,"account":str(account)})
             if transaction.is_valid(raise_exception=True):
                 transaction.save()
 

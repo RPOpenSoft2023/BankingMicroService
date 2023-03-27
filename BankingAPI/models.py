@@ -33,9 +33,9 @@ class Transaction(models.Model):
 
     date = models.DateField(null=True, blank=True)
     description = models.TextField(null=True, blank=True)
-    debit = models.IntegerField(null=True, blank=True)
-    credit = models.IntegerField(null=True, blank=True)
-    balance = models.IntegerField(null=True, blank=True)
+    debit = models.DecimalField(null=True, blank=True, max_digits=20, decimal_places=10)
+    credit = models.DecimalField(null=True, blank=True, max_digits=20, decimal_places=10)
+    balance = models.DecimalField(null=True, blank=True, max_digits=20, decimal_places=10)
     account = models.ForeignKey(to='Account', on_delete=models.CASCADE, null=True, blank=True)
     category = models.CharField(max_length=255,
                                 null=True,
