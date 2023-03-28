@@ -212,25 +212,30 @@ def delete_account(request):
 def add_transactions(request):
     try:
         user = request.user
-
         account_number = request.data["account_number"]
         account = Account.objects.get(pk=account_number)
-
         if str(account.phone_number) != str(user['phone_number']):
-            return Response(
-                {
-                    'error':
-                    'You are trying to add transactions for an account which is not yours'
-                },
-                status=401)
+            return Response({'error':'You are trying to add transactions for an account which is not yours'},status=401)
+        df = pd.DataFrame()
+        columns = ['Date', 'Particulars', 'Debit',
+                           'Credit', 'Balance', 'Category']
+        for col in columns : 
+            df[col] = pd.Series(request.data.get(col)) 
+        df = df.dropna(subset=['Date'])
+        df = df.reset_index()
+        df = df.fillna(value=0)
 
-        transactions = request.data.get("transactions")
-
-        if transactions is None or len(list(transactions))==0:
-            return Response({'error':'There are no transactions to add'}, status=400)
-
-        for i in list(transactions):
-            transaction = TransactionSerializer(data={**i,"account":str(account)})
+        for i in range(len(df)):
+            data = {
+                "account": str(account),
+                "date": df.loc[i, 'Date'],
+                "description": df.loc[i, 'Particulars'],
+                "debit": df.loc[i, 'Debit'].astype('int'),
+                "credit": df.loc[i, 'Credit'].astype('int'),
+                "balance": df.loc[i, 'Balance'].astype('int'),
+                "category": 'others' if df.loc[i, 'Category'] == 0 else df.loc[i, 'Category'],
+            }
+            transaction = TransactionSerializer(data=data)
             if transaction.is_valid(raise_exception=True):
                 transaction.save()
 
@@ -238,6 +243,7 @@ def add_transactions(request):
                         status=200)
 
     except Exception as e:
+        print("Hello")
         return Response({'error': str(e)}, status=400)
 
 
