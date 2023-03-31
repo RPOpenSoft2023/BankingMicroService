@@ -1,6 +1,8 @@
 ﻿# BankingMicroService
+## Required Packages:
+- View [requirements.txt](https://github.com/RPOpenSoft2023/BankingMicroService/blob/main/requirements.txt)
 
-## Installation using virtualenv package:
+## Instructions to build & install the software:
 - Clone the repository
 
   ```
@@ -57,6 +59,8 @@
   ```
   python manage.py createsuperuser
   ```
+  
+## Instructions to run the software:
 - Run the server
 
   ```
