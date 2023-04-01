@@ -1,6 +1,6 @@
 ﻿# BankingMicroService
 ## Required Packages:
-- View [requirements.txt](https://github.com/RPOpenSoft2023/BankingMicroService/blob/main/requirements.txt)
+- View requirements.txt in project directory.
 
 ## Instructions to build & install the software:
 - Clone the repository
