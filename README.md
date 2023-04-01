@@ -24,6 +24,7 @@
   python -m virtualenv myenv
   ```
 - Activate the virtual environment
+
   Windows:
   
   ```
@@ -33,6 +34,24 @@
   
   ```
   source myenv/bin/activate
+  ```
+- Add environment variables for connecting to Postgres Database and Users Microservice token verification
+  
+  Windows:
+  
+  ```
+  [System.Environment]::SetEnvironmentVariable('DATABASE_USER', 'postgres')
+  [System.Environment]::SetEnvironmentVariable('DATABASE_PASSWORD', 'demo')
+  [System.Environment]::SetEnvironmentVariable('DATABASE_NAME', 'banking-db')
+  [System.Environment]::SetEnvironmentVariable('USERS_MICROSERVICE_LINK', 'http://localhost:8000/user/api/verify_token')
+  ```
+  Linux:
+  
+  ```
+  export DATABASE_USER='postgres'
+  export DATABASE_PASSWORD='demo'
+  export DATABASE_NAME='banking-db'
+  export USERS_MICROSERVICE_LINK='http://localhost:8000/user/api/verify_token'
   ```
 - Change directory to the cloned folder i.e. BankingMicroService
 
